@@ -38,7 +38,8 @@ svg text{fill:var(--fg);font-family:system-ui,sans-serif}
 
 <div class="card"><h2>2. Chậu muốn làm</h2><div class="grid">
 <label style="grid-column:1/-1">Dạng chậu<select id="shape"><option value="p">Đa giác (vuông, lục giác...): nhập cạnh</option><option value="r">Tròn: nhập đường kính</option></select></label>
-<label id="lbm" style="grid-column:1/-1;display:none">Cách làm chậu tròn<select id="meth"><option value="c">Cuộn thành phễu rồi cắt phần thừa</option><option value="f">Gấp nhiều nếp nhỏ</option></select></label>
+<label id="lbm" style="grid-column:1/-1;display:none">Cách làm chậu tròn<select id="meth"><option value="c">Cuộn từ tấm dài (cắt bỏ tam giác thừa ở đáy)</option><option value="f">Gấp nhiều nếp nhỏ</option></select></label>
+<label id="lbcut" style="grid-column:1/-1;display:none">Chia phần thừa ở đáy<select id="cut"><option value="2">Cắt đều hai đầu</option><option value="1">Cắt dồn một đầu (đầu kia thẳng)</option></select></label>
 <label><span id="lb">Cạnh đáy (cm)</span><input id="b" type="number" step="0.5" value="25"></label>
 <label><span id="lt">Cạnh miệng (cm)</span><input id="t" type="number" step="0.5" value="30"></label>
 <label id="lbn">Số cạnh<select id="n"><option>3</option><option selected>4</option><option>5</option><option>6</option><option>8</option></select></label>
@@ -50,7 +51,7 @@ svg text{fill:var(--fg);font-family:system-ui,sans-serif}
 <div class="card" id="c3"><h2 id="h3">3. Bản vẽ tấm cần gấp</h2>
 <div id="svgbox"></div><div id="status" class="note"></div>
 <div id="marks" class="note"></div>
-<ol class="note" style="padding-left:18px">
+<ol class="note" id="steps" style="padding-left:18px">
 <li>Cắt tấm đúng kích thước dài × cao ghi ở trên, không cắt hình thang.</li>
 <li>Đánh dấu các điểm ở mép trên và mép dưới theo số đo trên, nối thành tam giác nếp, kẻ đường đứt ở giữa.</li>
 <li>Gấp đôi theo đường đứt, hai cạnh chéo trùng nhau, hai vách hai bên chạm nhau tại góc. Dán hoặc ghim hai lớp nếp.</li>
@@ -134,22 +135,35 @@ function fitRoll(rb,rt,hp0,sw,room){for(let hp=hp0;hp>rt-rb+0.2;hp-=0.1){const q
 
 function calc(){
  const rnd=$('shape').value==='r';
- const roll=rnd&&$('meth').value==='c';$('lbm').style.display=rnd?'':'none';$('lbn').style.display=rnd?'none':'';$('lbnp').style.display=(rnd&&!roll)?'':'none';$('c3').style.display=roll?'none':'';
+ const roll=rnd&&$('meth').value==='c';$('lbm').style.display=rnd?'':'none';$('lbn').style.display=rnd?'none':'';$('lbnp').style.display=(rnd&&!roll)?'':'none';$('lbcut').style.display=roll?'':'none';$('c3').style.display='';
  $('lb').textContent=rnd?'Đường kính đáy (cm)':'Cạnh đáy (cm)';$('lt').textContent=rnd?'Đường kính miệng (cm)':'Cạnh miệng (cm)';
- $('h3').textContent=rnd?'3. Gấp nhiều nếp nhỏ từ tấm thẳng (xấp xỉ hình tròn)':'3. Bản vẽ tấm cần gấp';
+ $('h3').textContent=roll?'3. Tấm cần cắt để cuộn thành chậu tròn':rnd?'3. Gấp nhiều nếp nhỏ từ tấm thẳng (xấp xỉ hình tròn)':'3. Bản vẽ tấm cần gấp';
+ $('steps').innerHTML=roll?'<li>Cắt tấm chữ nhật dài × cao như ghi ở trên.</li><li>Ở mép dưới, đo vào từ mỗi đầu một đoạn bằng cạnh ngang tam giác đỏ, nối với góc trên cùng đầu, cắt bỏ hai tam giác thừa đó.</li><li>Cuộn tấm thành vòng, hai đầu xiên khít nhau (chồng phần mép dán), dán hoặc ghim.</li><li>Banh miệng ra cho tròn, gắn đáy.</li>':'<li>Cắt tấm đúng kích thước dài × cao ghi ở trên, không cắt hình thang.</li><li>Đánh dấu các điểm ở mép trên và mép dưới theo số đo trên, nối thành tam giác nếp, kẻ đường đứt ở giữa.</li><li>Gấp đôi theo đường đứt, hai cạnh chéo trùng nhau, hai vách hai bên chạm nhau tại góc. Dán hoặc ghim hai lớp nếp.</li><li>Dựng thành vòng, nối hai đầu tấm (là hai nửa nếp ghép lại), ép các nếp áp sát vách ngoài cùng chiều, gắn đáy.</li>';
  const sw=+$('sw').value,sl=+$('sl').value,ov=+$('ov').value||0,hcv=+$('hc').value,B=+$('b').value,T=+$('t').value,th=+$('th').value||0,fl=(+$('fill').value||0)/100;
  const n=rnd?Math.round(+$('np').value||12):+$('n').value;
  const clear=m=>{['svgbox','marks','res','pl','cmp','csbox','planbox','secbox','secinfo'].forEach(i=>$(i).innerHTML='');$('seccard').style.display='none';$('status').innerHTML=m?'<span class="warn">'+m+'</span>':'';$('c3').style.display=''};
  if(!(sw>0&&sl>0&&B>0&&T>0&&n>=3)){clear('Nhập đủ số đo (số nếp tối thiểu 3).');return}
  if(T<B){clear('Miệng phải lớn hơn hoặc bằng đáy để gấp nếp.');return}
  const hp0=hcv>0?Math.min(hcv,sw):sw,shape=rnd?'r':'p';let hp=hp0;
- if(roll){if(T<B){}const hr=fitRoll(B/2,T/2,hp0,sw,sl-ov);if(hr===null){clear('Không cuộn rồi cắt được với tấm này: giảm độ loe (miệng gần đáy hơn), tăng bề rộng tấm hoặc tăng chiều dài tấm.');return}hp=hr}
+ 
  const Pb=rnd?PI*B:n*B,Pt=rnd?PI*T:n*T;
  const g=geom(shape,n,Pb,Pt,hp,th,fl);
  if(!g){clear('Tấm quá hẹp so với độ loe: tăng bề rộng tấm hoặc giảm miệng.');return}
  const bs=Pb/n,ts=Pt/n,w=(ts-bs)/2,L=Math.hypot(hp,w),len=Pt+ov,d=hp*w/L;
  // ---- bản vẽ tấm gấp nếp
- {const fs=Math.max(Pt,hp)/34,pad=fs,vw=len+2*pad,vh=hp+2*pad+fs*1.5,top=pad+fs*1.5,sk=fs/9;
+ if(roll){const Lt=PI*T,Lb=PI*B,dd=(Lt-Lb)/2,one=$('cut').value==='1',ca=one?0:dd,cb=one?2*dd:dd,L2=Lt+ov,fs=Math.max(L2,hp)/34,pad=fs,vw=L2+2*pad,vh=hp+2*pad+fs*3,top=pad+fs*1.5,sk=fs/9,X=x=>pad+x,Y=y=>top+y,da=fs/3+' '+fs/3;
+ let s='<polygon points="'+X(0)+','+Y(0)+' '+X(L2)+','+Y(0)+' '+X(L2-cb)+','+Y(hp)+' '+X(ca)+','+Y(hp)+'" fill="var(--fill)" stroke="currentColor" stroke-width="'+sk+'"/>';
+ s+='<polygon points="'+X(0)+','+Y(0)+' '+X(ca)+','+Y(hp)+' '+X(0)+','+Y(hp)+'" fill="var(--bad)" fill-opacity=".2" stroke="currentColor" stroke-width="'+sk+'" stroke-dasharray="'+da+'"/>';
+ s+='<polygon points="'+X(L2)+','+Y(0)+' '+X(L2-cb)+','+Y(hp)+' '+X(L2)+','+Y(hp)+'" fill="var(--bad)" fill-opacity=".2" stroke="currentColor" stroke-width="'+sk+'" stroke-dasharray="'+da+'"/>';
+ if(ov>0)s+='<line x1="'+X(L2-ov)+'" y1="'+Y(0)+'" x2="'+X(L2-ov-cb)+'" y2="'+Y(hp)+'" stroke="currentColor" stroke-width="'+sk+'" stroke-dasharray="'+da+'"/>';
+ s+='<text x="'+X(L2/2)+'" y="'+(Y(0)-fs*0.5)+'" font-size="'+fs+'" text-anchor="middle">Mép miệng dài '+f(L2)+' cm</text>';
+ s+='<text x="'+X(L2/2)+'" y="'+(Y(hp)+fs*1.2)+'" font-size="'+fs+'" text-anchor="middle">Mép đáy dài '+f(Lb+ov)+' cm · cao '+f(hp)+' cm</text>';
+ if(ca>fs*2)s+='<text x="'+X(ca*0.3)+'" y="'+Y(hp*0.8)+'" font-size="'+fs*0.9+'" text-anchor="middle">cắt</text>';if(cb>fs*2){s+='<text x="'+X(L2-cb*0.3)+'" y="'+Y(hp*0.8)+'" font-size="'+fs*0.9+'" text-anchor="middle">cắt</text>'}
+ $('svgbox').innerHTML='<svg viewBox="0 0 '+vw+' '+vh+'" style="width:100%;height:auto">'+s+'</svg>';
+ const okL=L2<=sl+1e-9,okW=hp<=sw+1e-9;
+ $('status').innerHTML='Tấm chữ nhật cần: <b>'+f(L2)+' × '+f(hp)+' cm</b>. '+((okL&&okW)?'<span class="good">Vừa tấm '+f(sw)+'×'+f(sl)+' cm, dư '+f(sl-L2)+' cm dài.</span>':'<span class="warn">'+(okL?'':'Thiếu '+f(L2-sl)+' cm dài (miệng tối đa Ø'+f((sl-ov)/PI)+' cm). ')+(okW?'':'Cao vách vượt bề rộng tấm.')+'</span>');
+ $('marks').innerHTML='<b>Phần thừa:</b> '+(one?'chỉ cắt ở một đầu':'mỗi đầu cắt bỏ')+' một tam giác vuông, cạnh ngang ở mép dưới <b>'+f(cb)+' cm</b>, cạnh đứng <b>'+f(hp)+' cm</b>. Mép dưới còn '+f(Lb+ov)+' cm = chu vi đáy π×'+f(B)+' cộng mép dán. Mép trên giữ '+f(L2)+' cm = chu vi miệng π×'+f(T)+' cộng mép dán. Tấm mềm cuộn thành phễu, mép miệng hơi lượn; vật liệu cứng nên dùng hình quạt chuẩn.'}
+ if(!roll){const fs=Math.max(Pt,hp)/34,pad=fs,vw=len+2*pad,vh=hp+2*pad+fs*1.5,top=pad+fs*1.5,sk=fs/9;
  const X=x=>pad+x,Y=y=>top+y;
  let s='<defs><clipPath id="cp"><rect x="'+X(0)+'" y="'+Y(0)+'" width="'+Pt+'" height="'+hp+'"/></clipPath></defs>';
  s+='<rect x="'+X(0)+'" y="'+Y(0)+'" width="'+Pt+'" height="'+hp+'" fill="var(--fill)" stroke="currentColor" stroke-width="'+sk+'"/><g clip-path="url(#cp)">';
@@ -169,8 +183,8 @@ function calc(){
  $('marks').innerHTML=n>16?'Với '+n+' nếp: nếp thứ j có đỉnh ở mép trên tại j × '+f(ts,2)+' cm, chân nếp rộng '+f(ts-bs,2)+' cm ở mép dưới (từ j × '+f(ts,2)+' trừ/cộng '+f(w,2)+' cm). Hai nửa nếp ở hai đầu ghép lại thành nếp cuối.':
  '<b>Đánh dấu từ mép trái (cm):</b><br>Mép trên, đỉnh nếp: '+tops.join(' · ')+'<br>Mép dưới, chân nếp từ–đến: '+bots.join(' · ')+'<br>Nếp rộng '+f(ts-bs)+' cm ở mép dưới, nhọn dần lên mép trên. Hai nửa nếp ở hai đầu tấm ghép lại thành nếp cuối.'}
  // ---- hình quạt cho chậu tròn
- $('seccard').style.display=rnd?'':'none';
- if(rnd){
+ $('seccard').style.display=(rnd&&!roll)?'':'none';
+ if(rnd&&!roll){
   $('h3b').textContent=roll?'3. Cuộn thành phễu rồi cắt phần thừa':'3b. Cách khác cho chậu tròn: cắt cong thành hình quạt';
   if(g.dr<0.05){$('secbox').innerHTML='';$('secinfo').innerHTML='Miệng gần bằng đáy, chậu gần như hình trụ: chỉ cần tấm chữ nhật dài '+f(PI*B+ov)+' × cao '+f(hp)+' cm, cuộn lại là xong, không cần cắt quạt.'}
   else{const sg=sectorGeom(g.rb,g.rt,hp),Lt=sg.Lt,Lb=sg.Lb,th2=sg.th,half=th2/2,bw=sg.bw,bh=sg.bh;
@@ -217,14 +231,14 @@ function calc(){
  '<div>Độ sâu đất từ mặt xuống đáy</div><b>'+f(g.Sd)+' cm</b>'+
  (rnd?'':'<div>Nếu cắt rời '+n+' tấm hình thang</div><b>'+f(B)+' / '+f(T)+' × '+f(hp)+' cm</b><div>Cạnh bên mỗi tấm hình thang</div><b>'+f(L)+' cm</b><div>Vát mép nối (nghiêng lưỡi cưa)</div><b>'+f(90-dih/2)+'°</b>');
  // ---- so sánh cùng tấm
- {const opts=[[3,'p','Tam giác'],[4,'p','Vuông'],[5,'p','Ngũ giác'],[6,'p','Lục giác'],[8,'p','Bát giác'],[n,'r',roll?'Tròn (cuộn cắt)':'Tròn']];
+ {const opts=[[3,'p','Tam giác'],[4,'p','Vuông'],[5,'p','Ngũ giác'],[6,'p','Lục giác'],[8,'p','Bát giác'],[n,'r',roll?'Tròn (cuộn)':'Tròn']];
   const rs=opts.map(o=>({name:o[2],n:o[0],sh:o[1],g:geom(o[1],o[0],Pb,Pt,o[1]==='r'?hp:hp0,th,fl)})).filter(o=>o.g);
   const sq=rs.find(o=>o.name==='Vuông'),mx=Math.max(...rs.map(o=>o.g.Vu));
   let h='<div class="hd">Dạng</div><div class="hd">Đất (lít)</div><div class="hd">Cao (cm)</div><div class="hd">So với vuông</div>';
   rs.forEach(o=>{const cur=(rnd&&o.sh==='r')||(!rnd&&o.sh==='p'&&o.n===n),best=o.g.Vu===mx,cl=(cur?'cur ':'')+(best?'best':'');
    h+='<div class="'+cl+'">'+o.name+(cur?' (đang chọn)':'')+(best?' ★':'')+'</div><div class="'+cl+'">'+f(o.g.Vu)+'</div><div class="'+cl+'">'+f(o.g.H)+'</div><div class="'+cl+'">'+(sq?(o.g.Vu/sq.g.Vu*100).toFixed(0)+'%':'')+'</div>'});
   $('cmp').innerHTML=h;
-  $('cmpnote').textContent='Cùng một tấm (cùng chu vi miệng '+f(Pt)+' cm, chu vi đáy '+f(Pb)+' cm, cao tấm '+f(hp0)+' cm). Dấu ★ là dạng chứa nhiều đất nhất. Nhiều cạnh hơn thì chứa nhiều hơn, tròn là giới hạn. Nhưng tròn khó làm hơn.'+(roll?' Cuộn rồi cắt mất bớt chiều cao nên chậu tròn có thể thấp và ít đất hơn.':' Phải gấp nhiều nếp nhỏ hoặc cắt cong.')}
+  $('cmpnote').textContent='Cùng một tấm (cùng chu vi miệng '+f(Pt)+' cm, chu vi đáy '+f(Pb)+' cm, cao tấm '+f(hp0)+' cm). Dấu ★ là dạng chứa nhiều đất nhất. Nhiều cạnh hơn thì chứa nhiều hơn, tròn là giới hạn. Nhưng tròn khó làm hơn.'+(roll?' Chậu tròn cuộn dùng nguyên chiều cao tấm.':' Phải gấp nhiều nếp nhỏ hoặc cắt cong.')}
  // ---- cây trồng
  const Vu=g.Vu,Sd=g.Sd;
  const all=BASE.concat(custom.map((c,i)=>Object.assign({mine:true,idx:i},c)));
@@ -239,6 +253,6 @@ function calc(){
   return '<div>'+p.n+(p.mine?' (của bạn)<button class="lk" onclick="delPlant('+p.idx+')">xóa</button>':'')+'<span class="sub">Rễ ăn sâu khoảng '+p.root+' cm nếu trồng đất; chậu nên có đất sâu từ '+p.dp+' cm</span><span class="sub">'+nt.join(' · ')+'</span></div><div class="tag t'+o.r+'">'+lab[o.r]+'</div>'}).join('')||'<div>Không có cây nào hợp với chậu này.</div><div></div>';
  $('plnote').textContent='Theo '+f(Vu)+' lít đất dùng được. Xếp hạng lấy mức thấp hơn giữa thể tích và độ sâu đất. Cây ăn trái cần chậu lớn, chậu nhỏ chỉ giữ cây được vài năm đầu rồi phải thay chậu. Số đo rễ là ước lượng; trong chậu rễ cuộn lại và ăn nông hơn ngoài đất. "Tạm được" nghĩa là cây nhỏ hơn, ít quả hơn, phải tưới nhiều.'+(g.H<20?' Chậu sâu dưới 20 cm khá nông, đất mặt khô nhanh, nên phủ gốc bằng rơm hoặc trấu.':'');
 }
-['sw','sl','ov','hc','shape','meth','b','t','n','np','th','fill','hideBad'].forEach(i=>$(i).addEventListener('input',calc));
+['sw','sl','ov','hc','shape','meth','b','t','n','np','th','fill','hideBad','cut'].forEach(i=>$(i).addEventListener('input',calc));
 calc();
 </script></body></html>
